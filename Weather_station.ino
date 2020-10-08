@@ -7,35 +7,35 @@
 #include <math.h>
 //______________________________________
 // WiFi
-const char* ssid = "";
-const char* wifi_password = "";
+const char* ssid = "";// wifi name
+const char* wifi_password = "";//wifi password
 //MQTT______________________________________
-const char* mqtt_server = "";
-const char* Temp1 = "veterna/streha/temeeratura_celice";
+const char* mqtt_server = "";                               //mqtt broker ip address
+const char* Temp1 = "veterna/streha/temeeratura_celice";    // mqtt subscriptions
 const char* Temp2 = "veterna/streha/zunanja_temperatura";
 const char* Temp3 = "veterna/streha/temperatura_konzole";
 const char* Vlaga = "veterna/streha/vlaga";
 const char* Veter = "veterna/streha/veter";
-const char* mqtt_username = "";
-const char* mqtt_password = "";
-const char* clientID = "";
+const char* mqtt_username = "";                             //mqtt username
+const char* mqtt_password = "";                             //mqtt password
+const char* clientID = "";                                  //mqtt id
 
 
 //______________________________________
-const byte pin = A1;
+const byte pin = A1;//wind sensor
 const unsigned int measurementDelaySeconds = 10;
 volatile unsigned int pulseCount = 0;
 const unsigned int debounceDelayMillis = 10;
 unsigned long lastPulse = 0;
 
 
-const float maxImpulsesPerSecond
+const float maxImpulsesPerSecond// wind speed sensor based on Hall-effect sensor, 2 pulses per revolution
   = ((float)1000 / debounceDelayMillis) * 0.5f;
 //____________________________________
 byte ledState = LOW;
 #define ONE_WIRE_BUS A2
-HIH4030 hygrometer(A3, 5.0, 4.8);
-OneWire oneWire(ONE_WIRE_BUS);
+HIH4030 hygrometer(A3, 5.0, 5.0);// humidity sensors comuncasion pin; supplyed voltage, output volatage.
+OneWire oneWire(ONE_WIRE_BUS);//temperature sensors, also see DallasTemperature librery for calculatins
 DallasTemperature sensors(&oneWire);
 WiFiClient wifiClient;
 PubSubClient client(mqtt_server, 1883, wifiClient);
@@ -73,7 +73,7 @@ void setup(void)
   pinMode(pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(pin), countPulse, FALLING);
   noInterrupts();
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);// build in led wind speed sensor, used for debuging
   digitalWrite(LED_BUILTIN, ledState);
   Serial.println("Arduino Digital Temperature // Serial Monitor Version");
   sensors.begin();
@@ -119,7 +119,7 @@ void loop(void)
   float pulsesPerSecond = (float)pulseCount / measurementDelaySeconds;
   float pulsesPerMinute = (float)pulseCount * 60 / measurementDelaySeconds;
   int displayedDecimals = numberOfDecimalsNeeded((float)1 / maxImpulsesPerSecond);
-  float veter=(pulsesPerSecond/2*62*3.14159265359*2/100);
+  float veter=(pulsesPerSecond/2*62*3.14159265359*2/100);//seting base for wind calculations
   String veters = "veter: " + String((float)veter) + " % ";
   String vlagas = "Vlaga: " + String((float)vlaga) + " % ";
   String temp1s = "Temperatura 1: " + String((float)temp1) + " % ";
@@ -131,47 +131,47 @@ void loop(void)
     Serial.println("vlaga poslana!");
   }
   else {
-    Serial.println("error");
+    Serial.println("Cold not connect to MQTT broker!");
     client.connect(clientID, mqtt_username, mqtt_password);
     delay(10);
     client.publish(Vlaga, String(vlaga).c_str());
   }
   if (client.publish(Temp1, String(temp1).c_str())) {
-    Serial.println("Temperatura1  poslana!");
+    Serial.println("Temperatura1  successfully sent!");
   }
   else {
-    Serial.println("error");
+    Serial.println("Cold not connect to MQTT broker!");
     client.connect(clientID, mqtt_username, mqtt_password);
     delay(10);
     client.publish(Temp1, String(temp1).c_str());
   }
   if (client.publish(Temp2, String(temp2).c_str())) {
-    Serial.println("Temperatura2  poslana!");
+    Serial.println("Temperatura2  successfully sent!");
   }
   else {
-    Serial.println("error");
+    Serial.println("Cold not connect to MQTT broker!");
     client.connect(clientID, mqtt_username, mqtt_password);
     delay(10);
     client.publish(Temp2, String(temp2).c_str());
   }
    if (client.publish(Temp3, String(temp3).c_str())) {
-    Serial.println("Temperatura3  poslana!");
+    Serial.println("Temperatura3  successfully sent!");
   }
   else {
-    Serial.println("error");
+    Serial.println("Cold not connect to MQTT broker!");
     client.connect(clientID, mqtt_username, mqtt_password);
     delay(10);
     client.publish(Temp3, String(temp3).c_str());
   }
   if (client.publish(Veter, String(veter).c_str())) {
-    Serial.println("Veter  poslan!");
+    Serial.println("Veter  successfully sent!");
   }
   else {
-    Serial.println("error");
+    Serial.println("Cold not connect to MQTT broker!");
     client.connect(clientID, mqtt_username, mqtt_password);
     delay(10);
     client.publish(Veter, String(veter).c_str());
-  }
+  }/* Serial prints used for debuging
   Serial.print("Povprečna vlaga: ");
   Serial.print(vlaga);
   Serial.println("%");
@@ -185,7 +185,8 @@ void loop(void)
   Serial.println(pulseCount);
   Serial.print("km/h: ");
   Serial.println(veter);
-
+*/
+  
   if (pulsesPerSecond >= maxImpulsesPerSecond) {
     Serial.println("ERROR: Debounce delay too high for impulse speed!");
   }
